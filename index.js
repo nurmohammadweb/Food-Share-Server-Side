@@ -85,6 +85,20 @@ async function run() {
     const result = await plateConection.find(query).toArray();
      res.send(result);
    });
+   
+    // request get
+
+    // Get requests for a specific food owner
+  app.get('/requests', async (req, res) => {
+  const ownerEmail = req.query.ownerEmail;  // Food Owner email
+  const foodId = req.query.foodId;          // Optional filter by food
+
+  const query = { food_owner_email: ownerEmail };
+  if (foodId) query.food_id = foodId;
+
+  const result = await requestsCollection.find(query).toArray();
+  res.send(result);
+  });
 
 
     //insertmany
