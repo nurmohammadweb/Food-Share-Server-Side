@@ -9,9 +9,9 @@ const port = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
+
+
 //mangodb
-
-
 const uri = "mongodb+srv://plateShare:p0kClqYCfBX2KR8C@cluster0.tachy23.mongodb.net/?appName=Cluster0";
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -33,7 +33,7 @@ async function run() {
 
     //find
     //findOne
-
+    // allfoods
     app.get('/allfoods', async(req, res) => {
 
       const result = await plateConection.find().toArray()   // await- promise reslove
@@ -41,7 +41,8 @@ async function run() {
 
       res.send(result);
     })
-
+    
+    //top food quantity foods
     app.get('/topfoods', async (req, res) => {
       try {
         const result = await plateConection
@@ -56,7 +57,30 @@ async function run() {
         res.status(500).send({ message: "Failed to load top foods" });
       }
     });
- 
+
+     
+    //insertmany
+    //insertOne
+    //add food 
+
+        app.post('/addfood', async (req, res) => {
+    try {
+    const data = req.body;
+    console.log(' Received data:', data);
+
+    const result = await plateConection.insertOne(data);
+    res.send({
+      success: true,
+      insertedId: result.insertedId
+  });
+    }
+    catch (error) {
+    console.error('❌ Error in /addfood route:', error);
+    res.status(500).send({ message: 'Failed to add food' });
+  }
+   });
+
+
 
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
