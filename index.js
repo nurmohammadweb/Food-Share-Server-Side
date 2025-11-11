@@ -31,6 +31,8 @@ async function run() {
 
       const db = client.db('plateShare-db');
     const plateConection = db.collection('foods');
+    const requestsCollection = db.collection('requests');
+
      
 
     //find
