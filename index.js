@@ -34,7 +34,7 @@ async function run() {
     //find
     //findOne
 
-    app.get('/plateShare', async(req, res) => {
+    app.get('/allfoods', async(req, res) => {
 
       const result = await plateConection.find().toArray()   // await- promise reslove
       console.log(result)
@@ -42,7 +42,21 @@ async function run() {
       res.send(result);
     })
 
+    app.get('/topfoods', async (req, res) => {
+      try {
+        const result = await plateConection
+          .find()
+          .sort({ food_quantity: -1 })
+          .limit(6)
+          .toArray();
 
+        res.send(result);
+      } catch (error) {
+        console.error("Error fetching top foods:", error);
+        res.status(500).send({ message: "Failed to load top foods" });
+      }
+    });
+ 
 
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
