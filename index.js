@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -11,10 +11,10 @@ app.use(express.json());
 
 
 
-//mangodb
-const uri = "mongodb+srv://plateShare:p0kClqYCfBX2KR8C@cluster0.tachy23.mongodb.net/?appName=Cluster0";
 
-// Create a MongoClient with a MongoClientOptions object to set the Stable API version
+const uri = "mongodb+srv://plateShare-db:CTbV0usTalCDvRel@cluster0.tachy23.mongodb.net/?appName=Cluster0";
+
+
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
@@ -25,16 +25,18 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
+    
     await client.connect();
-   
-    const db = client.db('plateShare-db');
-    const plateConection = db.collection('plateShare');
+
+
+      const db = client.db('plateShare-db');
+    const plateConection = db.collection('foods');
      
 
     //find
     //findOne
     // allfoods
-    app.get('/allfoods', async(req, res) => {
+    app.get('/foods', async(req, res) => {
 
       const result = await plateConection.find().toArray()   // await- promise reslove
       console.log(result)
@@ -43,7 +45,7 @@ async function run() {
     })
     
     //top food quantity foods
-    app.get('/topfoods', async (req, res) => {
+    app.get('/foods/top', async (req, res) => {
       try {
         const result = await plateConection
           .find()
@@ -58,39 +60,66 @@ async function run() {
       }
     });
 
+  
+
+    app.get('/foods/:id', async (req, res) => {
+      const id = req.params.id;
+      console.log(id)
+      const object =   new ObjectId(id)
+
+       const result = await plateConection.findOne({_id:object})
+
+      res.send({
+        success: true,
+        result
+      })
+    } )
      
+
+   // ManageMyFoods 
+   app.get("/foods", async (req, res) => {
+    const email = req.query.email;
+    const query = email ? { donator_email: email } : {};
+    const result = await plateConection.find(query).toArray();
+     res.send(result);
+   });
+
+
     //insertmany
     //insertOne
     //add food 
 
-        app.post('/addfood', async (req, res) => {
-    try {
-    const data = req.body;
-    console.log(' Received data:', data);
+    
+        app.post('/foods', async (req, res) => {
+    
+       const data = req.body;
+       console.log(' Received data:', data);
 
-    const result = await plateConection.insertOne(data);
-    res.send({
-      success: true,
-      insertedId: result.insertedId
-  });
-    }
-    catch (error) {
-    console.error('❌ Error in /addfood route:', error);
-    res.status(500).send({ message: 'Failed to add food' });
-  }
-   });
-
+       const result = await plateConection.insertOne(data);
+       res.send({
+       success: true,
+       result
+      });
+    
+  
+    })
+   
 
 
+
+
+   
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
-
   } finally {
-   
+    // Ensures that the client will close when you finish/error
     // await client.close();
   }
 }
 run().catch(console.dir);
+
+
+
 
 
 app.get('/', (req, res) => {
