@@ -106,6 +106,19 @@ async function run() {
   
     })
    
+    //requests post
+    app.post('/requests', async (req, res) => {
+  const requestData = req.body;
+  console.log('Received request:', requestData);
+
+  const result = await requestsCollection.insertOne({
+    ...requestData,
+    status: 'pending',        // default
+    createdAt: new Date()
+  });
+
+  res.send({ success: true, result });
+});
 
 
     // Delete 
