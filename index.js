@@ -142,6 +142,34 @@ async function run() {
       const result = await plateConection.deleteOne  (query);
       res.send(result);
     });
+    
+    //request put
+    // Accept or Reject a request
+app.put('/requests/:id', async (req, res) => {
+  const requestId = req.params.id;
+  const { status } = req.body; // 'accepted' বা 'rejected'
+
+  const requestObjectId = new ObjectId(requestId);
+
+  // Update request status
+  const result = await requestsCollection.updateOne(
+    { _id: requestObjectId },
+    { $set: { status } }
+  );
+
+  // যদি accepted হয়, food status update করো
+  if (status === 'accepted') {
+    const request = await requestsCollection.findOne({ _id: requestObjectId });
+    await plateConection.updateOne(
+      { _id: new ObjectId(request.food_id) },
+      { $set: { food_status: 'donated' } }
+    );
+  }
+
+  res.send(result);
+ });
+
+     
 
      // UPDATE: Update a food by ID
     app.put("/foods/:id", async (req, res) => {
