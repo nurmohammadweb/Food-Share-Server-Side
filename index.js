@@ -35,16 +35,6 @@ async function run() {
 
      
 
-    //find
-    //findOne
-    // allfoods
-    app.get('/foods', async(req, res) => {
-
-      const result = await plateConection.find().toArray()   // await- promise reslove
-      console.log(result)
-
-      res.send(result);
-    })
     
     //top food quantity foods
     app.get('/foods/top', async (req, res) => {
@@ -78,15 +68,44 @@ async function run() {
     } )
      
 
-   // ManageMyFoods 
-   app.get("/foods", async (req, res) => {
-    const email = req.query.email;
-    const query = email ? { donator_email: email } : {};
-    const result = await plateConection.find(query).toArray();
-     res.send(result);
-   });
+    app.get('/foods', async (req, res) => {
+  const email = req.query.email;
+  const query = email ? { donator_email: email } : {};
+  const result = await plateConection.find(query).toArray();
+  res.send(result);
+  });
+
    
     // request get
+    // Get all requests for a specific user
+   app.get('/foodRequests', async (req, res) => {
+  const userEmail = req.query.userEmail;
+  if (!userEmail) return res.status(400).json({ error: "userEmail required" });
+
+  try {
+    const requests = await requestsCollection
+      .aggregate([
+        { $match: { userEmail } },  
+        {
+          $lookup: {
+            from: "foods",
+            localField: "food_id",
+            foreignField: "_id",
+            as: "food"
+          }
+        },
+        { $unwind: { path: "$food", preserveNullAndEmptyArrays: true } },
+        { $sort: { createdAt: -1 } }
+      ])
+      .toArray();
+
+    res.json(requests);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch requests" });
+  }
+});
+  
 
     // Get requests for a specific food owner
   app.get('/requests', async (req, res) => {
@@ -101,9 +120,7 @@ async function run() {
   });
 
 
-    //insertmany
-    //insertOne
-    //add food 
+  
 
     
         app.post('/foods', async (req, res) => {
@@ -119,22 +136,23 @@ async function run() {
     
   
     })
-   
-    //requests post
-    app.post('/requests', async (req, res) => {
+    
+    // requests POST
+ app.post('/requests', async (req, res) => {
   const requestData = req.body;
   console.log('Received request:', requestData);
 
   const result = await requestsCollection.insertOne({
     ...requestData,
-    status: 'pending',        // default
+    userEmail: requestData.requester_email, 
+    status: 'pending',
     createdAt: new Date()
   });
 
   res.send({ success: true, result });
- });
-
-
+  });
+ 
+    
     // Delete 
     app.delete("/foods/:id", async (req, res) => {
       const id = req.params.id;
@@ -143,9 +161,24 @@ async function run() {
       res.send(result);
     });
     
+    
+   
+    app.delete('/foodRequests/:id', async (req, res) => {
+  const id = req.params.id;
+  try {
+    const result = await requestsCollection.deleteOne({ _id: new ObjectId(id) });
+    if (result.deletedCount === 0) return res.status(404).json({ error: "Request not found" });
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to delete request" });
+  }
+ });
+
+
     //request put
     // Accept or Reject a request
-app.put('/requests/:id', async (req, res) => {
+ app.put('/requests/:id', async (req, res) => {
   const requestId = req.params.id;
   const { status } = req.body; // 'accepted' বা 'rejected'
 
@@ -157,7 +190,7 @@ app.put('/requests/:id', async (req, res) => {
     { $set: { status } }
   );
 
-  // যদি accepted হয়, food status update করো
+  //  accepted 
   if (status === 'accepted') {
     const request = await requestsCollection.findOne({ _id: requestObjectId });
     await plateConection.updateOne(
@@ -167,7 +200,7 @@ app.put('/requests/:id', async (req, res) => {
   }
 
   res.send(result);
-});
+ }); 
 
      
 
@@ -188,7 +221,7 @@ app.put('/requests/:id', async (req, res) => {
      },
    };
 
-  const result = await foodCollection.updateOne(query, updateDoc);
+  const result = await plateConection.updateOne(query, updateDoc);
   res.send(result);
  });
  
@@ -201,10 +234,6 @@ app.put('/requests/:id', async (req, res) => {
   }
 }
 run().catch(console.dir);
-
-
-
-
 
 app.get('/', (req, res) => {
   res.send('Server is running')
